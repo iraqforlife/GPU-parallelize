@@ -1,0 +1,13 @@
+/target/
+*.classpath
+*.project
+*.prefs
+*.exe
+*.obj
+*.pdb
+*.log
+*.user
+*.filters
+*.sdf
+*.ipch
+\debug
