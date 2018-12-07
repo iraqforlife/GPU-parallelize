@@ -67,6 +67,11 @@ namespace log645
 		* Copie matrix dans matCopy
 		*/
 		void Copy();
+
+		/**
+		* Traite le probleme de facon parallele
+		*/
+		void ParallelWork();
 		
 	};
 

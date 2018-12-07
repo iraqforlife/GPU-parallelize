@@ -5,6 +5,7 @@ using namespace log645;
 	
 	int main(int argc, char *argv[])
 	{
+		// get input parameters
 		int m = atoi(argv[1]);
 		int n = atoi(argv[2]);
 		int k = atoi(argv[3]);
@@ -194,6 +195,92 @@ namespace log645
 			Copy();
 		}
 	}
+
+	void Lab4::ParallelWork()
+	{
+		// Load the kernel source code into the array source_str
+		char *fp;
+		char *source_str;
+		size_t source_size;
+
+		fp = oclLoadProgSource("lab4.cl", "", &source_size);
+		if (!fp) {
+			fprintf(stderr, "Failed to load kernel.\n");
+			exit(1);
+		}
+		source_str = (char*)malloc(MAX_SOURCE_SIZE);
+
+		// Get platform and device information
+		cl_platform_id platform_id = NULL;
+		cl_device_id device_id = NULL;
+		cl_uint ret_num_devices;
+		cl_uint ret_num_platforms;
+		cl_int ret = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);
+		ret = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_DEFAULT, 1,
+			&device_id, &ret_num_devices);
+
+		// Create an OpenCL context
+		cl_context context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &ret);
+
+		// Create a command queue
+		cl_command_queue command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
+
+		// Create memory buffers on the device for each matrix 
+		cl_mem matrix_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY,
+			_matrixSize * sizeof(double), NULL, &ret);
+		cl_mem matrix_previous_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY,
+			_matrixSize * sizeof(double), NULL, &ret);
+
+		// Copy the matrix to their respective memory buffers
+		ret = clEnqueueWriteBuffer(command_queue, matrix_mem_obj, CL_TRUE, 0,
+			_matrixSize * sizeof(int), _matrix, 0, NULL, NULL);
+		ret = clEnqueueWriteBuffer(command_queue, matrix_previous_mem_obj, CL_TRUE, 0,
+			_matrixSize * sizeof(int), _matrixPrevious, 0, NULL, NULL);
+
+		// Create a program from the kernel source
+		cl_program program = clCreateProgramWithSource(context, 1,
+			(const char **)&source_str, (const size_t *)&source_size, &ret);
+
+		// Build the program
+		ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
+
+		// Create the OpenCL kernel
+		cl_kernel kernel = clCreateKernel(program, "HeatTransfer", &ret);
+
+		// Execute the OpenCL kernel on the matrix
+		size_t global_item_size = _matrixSize; // Process the entire matrix 
+		size_t local_item_size = 64; // Divide work items into groups of 64
+		/*ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,
+			&global_item_size, &local_item_size, 0, NULL, NULL);*/
+
+		// loop on time
+		for(int i(1); i < _K; i++)
+		{
+			ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,
+				&global_item_size, &local_item_size, 0, NULL, NULL);
+		}
+
+		// Read the memory buffer matrix on the device to the local variable matrix
+		ret = clEnqueueReadBuffer(command_queue, matrix_mem_obj, CL_TRUE, 0,
+			_matrixSize * sizeof(int), _matrix, 0, NULL, NULL);
+
+		// Display the result to the screen
+		Affiche();
+
+		// Clean up
+		ret = clFlush(command_queue);
+		ret = clFinish(command_queue);
+		ret = clReleaseKernel(kernel);
+		ret = clReleaseProgram(program);
+		ret = clReleaseMemObject(matrix_mem_obj);
+		ret = clReleaseMemObject(matrix_previous_mem_obj);
+		ret = clReleaseCommandQueue(command_queue);
+		ret = clReleaseContext(context);
+		free(_matrix);
+		free(_matrixPrevious);
+
+	}
+
 	void Lab4::Affiche()
 	{
 		printf("\n");
