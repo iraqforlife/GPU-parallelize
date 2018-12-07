@@ -34,6 +34,7 @@ namespace log645
 		float _h;
 		//working vars
 		int _matrixSize;
+		float _matrixBufferSize;
 		int _blockSize;
 		int _startPosition;
 		float _scaler;
@@ -42,8 +43,8 @@ namespace log645
 		int _numberOfProcessorToUse;
 		int _nbProc;
 		//matrix
-		double *_matrix;
-		double *_matrixPrevious;
+		float *_matrix;
+		float *_matrixPrevious;
 
 
 		void Reset();
@@ -67,6 +68,8 @@ namespace log645
 		* Copie matrix dans matCopy
 		*/
 		void Copy();
+
+		void checkForError(cl_int status, char * taskDescription);
 
 		/**
 		* Traite le probleme de facon parallele
