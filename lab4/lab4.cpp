@@ -225,17 +225,27 @@ namespace log645
 		// Create a command queue
 		cl_command_queue command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
 
-		// Create memory buffers on the device for each matrix 
+		// Create memory buffers on the device for each matrix M,N,scaler
 		cl_mem matrix_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY,
 			_matrixSize * sizeof(double), NULL, &ret);
 		cl_mem matrix_previous_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY,
 			_matrixSize * sizeof(double), NULL, &ret);
+		cl_mem m_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY,
+			sizeof(int), NULL, &ret);
+		cl_mem n_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY,
+			sizeof(int), NULL, &ret);
+		cl_mem scaler_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY,
+			sizeof(double), NULL, &ret);
 
 		// Copy the matrix to their respective memory buffers
 		ret = clEnqueueWriteBuffer(command_queue, matrix_mem_obj, CL_TRUE, 0,
 			_matrixSize * sizeof(int), _matrix, 0, NULL, NULL);
 		ret = clEnqueueWriteBuffer(command_queue, matrix_previous_mem_obj, CL_TRUE, 0,
 			_matrixSize * sizeof(int), _matrixPrevious, 0, NULL, NULL);
+		/*ret = clEnqueueWriteBuffer(command_queue, m_mem_obj, CL_TRUE, 0,
+			sizeof(int), _M, 0, NULL, NULL);
+		ret = clEnqueueWriteBuffer(command_queue, n_mem_obj, CL_TRUE, 0,
+			sizeof(int), _N, 0, NULL, NULL);*/
 
 		// Create a program from the kernel source
 		cl_program program = clCreateProgramWithSource(context, 1,
@@ -246,6 +256,11 @@ namespace log645
 
 		// Create the OpenCL kernel
 		cl_kernel kernel = clCreateKernel(program, "HeatTransfer", &ret);
+
+		// Set the arguments of the kernel
+		ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&matrix_mem_obj);
+		ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&matrix_previous_mem_obj);
+		//ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&c_mem_obj);
 
 		// Execute the OpenCL kernel on the matrix
 		size_t global_item_size = _matrixSize; // Process the entire matrix 
