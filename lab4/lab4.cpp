@@ -242,10 +242,12 @@ namespace log645
 			_matrixSize * sizeof(int), _matrix, 0, NULL, NULL);
 		ret = clEnqueueWriteBuffer(command_queue, matrix_previous_mem_obj, CL_TRUE, 0,
 			_matrixSize * sizeof(int), _matrixPrevious, 0, NULL, NULL);
-		/*ret = clEnqueueWriteBuffer(command_queue, m_mem_obj, CL_TRUE, 0,
-			sizeof(int), _M, 0, NULL, NULL);
+		ret = clEnqueueWriteBuffer(command_queue, m_mem_obj, CL_TRUE, 0,
+			sizeof(int), &_M, 0, NULL, NULL);
 		ret = clEnqueueWriteBuffer(command_queue, n_mem_obj, CL_TRUE, 0,
-			sizeof(int), _N, 0, NULL, NULL);*/
+			sizeof(int), &_N, 0, NULL, NULL);
+		ret = clEnqueueWriteBuffer(command_queue, n_mem_obj, CL_TRUE, 0,
+			sizeof(double), &_scaler, 0, NULL, NULL);
 
 		// Create a program from the kernel source
 		cl_program program = clCreateProgramWithSource(context, 1,
@@ -260,7 +262,9 @@ namespace log645
 		// Set the arguments of the kernel
 		ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&matrix_mem_obj);
 		ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&matrix_previous_mem_obj);
-		//ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&c_mem_obj);
+		ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&m_mem_obj);
+		ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&n_mem_obj);
+		ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&scaler_mem_obj);
 
 		// Execute the OpenCL kernel on the matrix
 		size_t global_item_size = _matrixSize; // Process the entire matrix 
