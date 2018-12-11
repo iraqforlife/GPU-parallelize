@@ -52,8 +52,9 @@ namespace log645
 
 		/**
 		* Traite le problème de façon séqquentielle
+		* Retourne le temps de traitement
 		*/
-		void Work();
+		double Work();
 
 		/**
 		* Affihce la matrice
@@ -69,8 +70,9 @@ namespace log645
 
 		/**
 		* Traite le probleme de facon parallele
+		* Retourne le temps de traitement
 		*/
-		void ParallelWork();
+		double ParallelWork();
 		
 	};
 

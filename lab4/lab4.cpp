@@ -13,7 +13,6 @@ using namespace log645;
 		float h = atof(argv[5]);
 		
 		Lab4 worker(m,n,k,td,h);
-		printf("worker is done");
 		system("pause");
 		return 0;
 }
@@ -28,18 +27,21 @@ namespace log645
 		_h = h;
 		//to avoir recomputing each time
 		_scaler = (_td) / (_h * _h);
-		printf("\nm %d; n %d; k %d; td %.2f, h %.2f scaler %.2f\n", _M, _N, _K, _td, _h, _scaler);
+		printf("Parametres en entree:\nm %d; n %d; k %d; td %.2f, h %.2f scaler %.2f\n", _M, _N, _K, _td, _h, _scaler);
 		
-		// Timers
-		struct timespec requestStart, requestEnd;
-		double tempExecutionParallele;
-		double tempExecutionSequentiel;
+		
+		double tempExecutionSequentiel, tempExecutionParallele;
 
-		printf("init...");
 		Init();
-		printf("...done.\nParallel work...");
-		ParallelWork();
-		printf("done\n");
+		printf("Traitement sequentiel : \n");
+		tempExecutionSequentiel = Work();
+		printf("Temps d'execution sequentiel : %.2f ms\n", tempExecutionSequentiel);
+
+		printf("Traitement parallele :\n");
+		tempExecutionParallele = ParallelWork();
+		printf("Temps d'execution parallele : %.2f ms\n", tempExecutionParallele);
+		printf("Acceleration : %f\n", tempExecutionSequentiel/ tempExecutionParallele);
+
 	}
 	Lab4::~Lab4()
 	{
@@ -73,8 +75,13 @@ namespace log645
 		_matrixPrevious = (float *)malloc(_matrixBufferSize);
 		Reset();
 	}
-	void Lab4::Work()
+	double Lab4::Work()
 	{
+		// Timers
+		struct timespec requestStart, requestEnd;
+		double tempExecutionSequentiel;
+		timespec_get(&requestStart, TIME_UTC);
+
 		double temp = 1 - (4 * _scaler);
 		for (int k = 0; k < _K; k++) {
 			for (int i = 0; i < _matrixSize - 1; i++) {
@@ -92,6 +99,14 @@ namespace log645
 			}
 			Copy();
 		}
+
+		//get timer result
+		timespec_get(&requestEnd, TIME_UTC);
+		tempExecutionSequentiel = (double)(requestEnd.tv_nsec - requestStart.tv_nsec) / 1000;
+
+		Affiche();
+
+		return tempExecutionSequentiel;
 	}
 	// Displays error message if the operation wasn't a success
 	void Lab4::checkForError(cl_int status, char* taskDescription)
@@ -101,8 +116,12 @@ namespace log645
 			printf("Error while %s, code : %d\n", taskDescription, status);
 		}
 	}
-	void Lab4::ParallelWork()
+	double Lab4::ParallelWork()
 	{
+		// Timers
+		struct timespec requestStart, requestEnd;
+		double tempExecutionParallele;
+		timespec_get(&requestStart, TIME_UTC);
 		
 		// Load the kernel source code into the array source_str
 		char *programFile;
@@ -188,6 +207,11 @@ namespace log645
 			status = clEnqueueReadBuffer(command_queue, matrix_present_mem_obj, true, 0, _matrixBufferSize, _matrix, 0, nullptr, nullptr);
 
 		checkForError(status, "Error: reading matrix");
+
+		//get timer result
+		timespec_get(&requestEnd, TIME_UTC);
+		tempExecutionParallele = (double)(requestEnd.tv_nsec - requestStart.tv_nsec) / 1000;
+
 		// Display the result to the screen
 		Affiche();
 
@@ -203,7 +227,7 @@ namespace log645
 		free(_matrix);
 		free(_matrixPrevious);
 		
-
+		return tempExecutionParallele;
 	}
 
 	void Lab4::Affiche()

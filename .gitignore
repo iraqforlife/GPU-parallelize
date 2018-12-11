@@ -10,4 +10,6 @@
 *.filters
 *.sdf
 *.ipch
+*.VC.opendb
+*.VC.db
 \debug
