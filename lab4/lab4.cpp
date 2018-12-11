@@ -45,14 +45,9 @@ namespace log645
 	}
 	Lab4::~Lab4()
 	{
-		printf("destructor start...");
-		/*delete []_matrix;
-		delete []_matrixPrevious;*/
-		printf("destructor end.\n");
 	}
 	void log645::Lab4::Reset()
 	{
-		printf("reset start...");
 		for (int i = 0; i < _M*_N; i++) {
 			int x = floor(i / _N);
 			int y = i % _N;
@@ -65,7 +60,6 @@ namespace log645
 			}
 		}
 		Copy();
-		printf("reset end.\n");
 	}
 	void log645::Lab4::Init()
 	{
@@ -77,10 +71,8 @@ namespace log645
 	}
 	double Lab4::Work()
 	{
-		// Timers
-		struct timespec requestStart, requestEnd;
-		double tempExecutionSequentiel;
-		timespec_get(&requestStart, TIME_UTC);
+		double tempExec;
+		auto start = std::chrono::system_clock::now();
 
 		double temp = 1 - (4 * _scaler);
 		for (int k = 0; k < _K; k++) {
@@ -101,12 +93,12 @@ namespace log645
 		}
 
 		//get timer result
-		timespec_get(&requestEnd, TIME_UTC);
-		tempExecutionSequentiel = (double)(requestEnd.tv_nsec - requestStart.tv_nsec) / 1000;
+		auto end = std::chrono::system_clock::now();
+		tempExec = (end - start).count();
 
 		Affiche();
 
-		return tempExecutionSequentiel;
+		return tempExec;
 	}
 	// Displays error message if the operation wasn't a success
 	void Lab4::checkForError(cl_int status, char* taskDescription)
@@ -118,10 +110,8 @@ namespace log645
 	}
 	double Lab4::ParallelWork()
 	{
-		// Timers
-		struct timespec requestStart, requestEnd;
-		double tempExecutionParallele;
-		timespec_get(&requestStart, TIME_UTC);
+		double tempExec;
+		auto start = std::chrono::system_clock::now();
 		
 		// Load the kernel source code into the array source_str
 		char *programFile;
@@ -181,7 +171,6 @@ namespace log645
 			cl_event complete = nullptr;
 		for(int i(1); i < _K; i++)
 		{
-			printf("k %d\n",i);
 			if (i % 2 == 0) // even
 			{
 				clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&matrix_present_mem_obj);
@@ -209,8 +198,8 @@ namespace log645
 		checkForError(status, "Error: reading matrix");
 
 		//get timer result
-		timespec_get(&requestEnd, TIME_UTC);
-		tempExecutionParallele = (double)(requestEnd.tv_nsec - requestStart.tv_nsec) / 1000;
+		auto end = std::chrono::system_clock::now();
+		tempExec = (end - start).count();
 
 		// Display the result to the screen
 		Affiche();
@@ -227,20 +216,33 @@ namespace log645
 		free(_matrix);
 		free(_matrixPrevious);
 		
-		return tempExecutionParallele;
+		return tempExec;
 	}
 
 	void Lab4::Affiche()
 	{
+		int limit = 5;
 		printf("\n");
-		for (int y = _N - 1; y >= 0; y--) {
-			for (int x = 0; x < _M; x++) {
-				int index = x * _N + y;
-				printf("%0.2f | ", _matrix[index]);
+		if(_M < limit+1 && _N < limit+1) {
+			for (int y = _N - 1; y >= 0; y--) {
+				for (int x = 0; x < _M; x++) {
+					int index = x * _N + y;
+					printf("%0.2f | ", _matrix[index]);
+				}
+				printf("\n");
 			}
-			printf("\n\n");
+			printf("\n");
+		} else {
+			printf("Affichage des %d premieres lignes et %d premieres colonnes.\n", limit, limit);
+			for (int y = _N - 1; y >= _N - limit-1; y--) {
+				for (int x = 0; x < limit+1; x++) {
+					int index = x * _N + y;
+					printf("%0.2f | ", _matrix[index]);
+				}
+				printf("\n");
+			}
+			printf("\n");
 		}
-		printf("\n");
 	}
 	void Lab4::Copy()
 	{
@@ -288,4 +290,5 @@ namespace log645
 		cSourceString[szSourceLength + szPreambleLength] = '\0';
 		return cSourceString;
 	}
+
 }
