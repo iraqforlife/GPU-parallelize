@@ -13,6 +13,8 @@ using namespace log645;
 		float h = atof(argv[5]);
 		
 		Lab4 worker(m,n,k,td,h);
+		printf("worker is done");
+		system("pause");
 		return 0;
 }
 namespace log645
@@ -33,21 +35,22 @@ namespace log645
 		double tempExecutionParallele;
 		double tempExecutionSequentiel;
 
+		printf("init...");
 		Init();
-		printf("init");
-		//todo
-		printf("b4");
+		printf("...done.\nParallel work...");
 		ParallelWork();
-		printf("done");
-		system("pause");
+		printf("done\n");
 	}
 	Lab4::~Lab4()
 	{
-		delete _matrix;
-		delete _matrixPrevious;
+		printf("destructor start...");
+		/*delete []_matrix;
+		delete []_matrixPrevious;*/
+		printf("destructor end.\n");
 	}
 	void log645::Lab4::Reset()
 	{
+		printf("reset start...");
 		for (int i = 0; i < _M*_N; i++) {
 			int x = floor(i / _N);
 			int y = i % _N;
@@ -60,6 +63,7 @@ namespace log645
 			}
 		}
 		Copy();
+		printf("reset end.\n");
 	}
 	void log645::Lab4::Init()
 	{
@@ -67,22 +71,6 @@ namespace log645
 		_matrixBufferSize = sizeof(float) * _matrixSize;
 		_matrix = (float *)malloc(_matrixBufferSize);
 		_matrixPrevious = (float *)malloc(_matrixBufferSize);
-		/*_numberOfProcessorToUse = 0;
-		//determine # of proc to use for ideale slicing
-		for (int i = _nbProc; i > 0; i--) {
-			if (_matrixSize % i == 0)
-			{
-				_numberOfProcessorToUse = i;
-				break;
-			}
-		}
-		//_numberOfProcessorToUse=30;
-		_blockSize = _matrixSize / _numberOfProcessorToUse;
-		if (_rank < _numberOfProcessorToUse)
-			_startPosition = _blockSize * _rank;
-		else
-			_startPosition = 0;
-			*/
 		Reset();
 	}
 	void Lab4::Work()
@@ -115,39 +103,32 @@ namespace log645
 	}
 	void Lab4::ParallelWork()
 	{
-		/*
+		
 		// Load the kernel source code into the array source_str
 		char *programFile;
 		size_t source_size;
 
 		programFile = oclLoadProgSource("lab4.cl", "", &source_size);
 		// Get platform and device information
-		cl_platform_id platform_id = 0;
-		cl_device_id device_id = nullptr;
-		cl_uint ret_num_devices;
-		cl_uint ret_num_platforms = 0;
-		printf("before getplateform\n");
+		cl_platform_id platform_id(0);
+		cl_device_id device_id(0);
+		cl_uint ret_num_devices(0);
+		cl_uint ret_num_platforms(0);
 		cl_int status = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);
 		checkForError(status, "Error: platforms ids");
 		status = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_DEFAULT, 1,&device_id, &ret_num_devices);
-		printf("after getdeviceId\n");
-
+		
 		checkForError(status, "Error: platforms");
-		printf("platform\n");
-
 		// Create an OpenCL context
 		cl_context context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &status);
-		printf("context\n");
 		// Create a command queue
 		cl_command_queue command_queue = clCreateCommandQueue(context, device_id, 0, &status);
-		printf("queue\n");
 		// Create memory buffers on the device for each matrix M,N,scaler
 		cl_mem matrix_present_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, _matrixBufferSize, NULL, &status);
 		cl_mem matrix_previous_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, _matrixBufferSize, NULL, &status);
 		cl_mem m_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(int), NULL, &status);
 		cl_mem n_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(int), NULL, &status);
 		cl_mem scaler_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(float), NULL, &status);
-		printf("created buffers\n");
 		// Copy the matrix to their respective memory buffers
 		status = clEnqueueWriteBuffer(command_queue, matrix_present_mem_obj, CL_TRUE, 0, _matrixBufferSize, _matrix, 0, NULL, NULL);
 		checkForError(status, "Error: present matrix queue");
@@ -159,30 +140,24 @@ namespace log645
 		checkForError(status, "Error: N");
 		status = clEnqueueWriteBuffer(command_queue, n_mem_obj, CL_TRUE, 0, sizeof(float), &_scaler, 0, NULL, NULL);
 		checkForError(status, "Error: Scaler");
-		printf("copied the data\n");
 		// Create a program from the kernel source
 		cl_program program = clCreateProgramWithSource(context, 1,(const char **)&programFile, (const size_t *)&source_size, &status);
 		checkForError(status, "Error: source program");
-		printf("program create\n");
 		// Build the program
 		status = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
-		printf("program build\n");
 		checkForError(status, "Error: building program");
 		// Create the OpenCL kernel
 		cl_kernel kernel = clCreateKernel(program, "HeatTransfer", &status);
-		printf("kernel\n");
 		// Set the arguments of the kernel
 		status = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&matrix_present_mem_obj);
 		status = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&matrix_previous_mem_obj);
 		status = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&m_mem_obj);
 		status = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&n_mem_obj);
 		status = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&scaler_mem_obj);
-		printf("kernel args\n");
 		// Execute the OpenCL kernel on the matrix
 		size_t global_item_size = _matrixSize; // Process the entire matrix 
 		size_t local_item_size = 128; // Divide work items into groups of 128
 		
-		printf("looping\n");
 		// loop on time
 			cl_event complete = nullptr;
 		for(int i(1); i < _K; i++)
@@ -227,7 +202,7 @@ namespace log645
 		status = clReleaseContext(context);
 		free(_matrix);
 		free(_matrixPrevious);
-		*/
+		
 
 	}
 
@@ -245,7 +220,7 @@ namespace log645
 	}
 	void Lab4::Copy()
 	{
-		memcpy(_matrixPrevious, _matrix, sizeof(double) * _matrixSize);
+		memcpy(_matrixPrevious, _matrix, _matrixBufferSize);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//! Loads a Program file and prepends the cPreamble to the code.
