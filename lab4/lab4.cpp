@@ -94,10 +94,10 @@ namespace log645
 				int y = i % _N;
 				//U(i,j,k)=(1-4 td/h2)xU(i, j, k-1) + (td / h2)x[U(i - 1, j, k-1) + U(i + 1, j, k-1) + U(i, j - 1, k-1) + U(i, j + 1, k-1)]
 				if (x > 0 && x < _M - 1 && y > 0 && y < _N - 1) {
-					double x1 = _matrixPrevious[(x - 1) * _N + y];// matrix[x-1][y]
-					double x2 = _matrixPrevious[(x + 1) * _N + y];// matrix[x+1][y]
-					double y1 = _matrixPrevious[x * _N + y - 1];// matrix[x][y-1]
-					double y2 = _matrixPrevious[x * _N + y + 1];// matrix[x][y+1]
+					float x1 = _matrixPrevious[(x - 1) * _N + y];// matrix[x-1][y]
+					float x2 = _matrixPrevious[(x + 1) * _N + y];// matrix[x+1][y]
+					float y1 = _matrixPrevious[x * _N + y - 1];// matrix[x][y-1]
+					float y2 = _matrixPrevious[x * _N + y + 1];// matrix[x][y+1]
 
 					_matrix[i] = (temp) * _matrixPrevious[i] + _scaler * (x1 + x2 + y1 + y2);
 				}
@@ -115,18 +115,23 @@ namespace log645
 	}
 	void Lab4::ParallelWork()
 	{
+		/*
 		// Load the kernel source code into the array source_str
 		char *programFile;
 		size_t source_size;
 
 		programFile = oclLoadProgSource("lab4.cl", "", &source_size);
 		// Get platform and device information
-		cl_platform_id platform_id = nullptr;
+		cl_platform_id platform_id = 0;
 		cl_device_id device_id = nullptr;
 		cl_uint ret_num_devices;
-		cl_uint ret_num_platforms;
+		cl_uint ret_num_platforms = 0;
+		printf("before getplateform\n");
 		cl_int status = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);
+		checkForError(status, "Error: platforms ids");
 		status = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_DEFAULT, 1,&device_id, &ret_num_devices);
+		printf("after getdeviceId\n");
+
 		checkForError(status, "Error: platforms");
 		printf("platform\n");
 
@@ -176,14 +181,13 @@ namespace log645
 		// Execute the OpenCL kernel on the matrix
 		size_t global_item_size = _matrixSize; // Process the entire matrix 
 		size_t local_item_size = 128; // Divide work items into groups of 128
-		/*ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,
-			&global_item_size, &local_item_size, 0, NULL, NULL);*/
+		
 		printf("looping\n");
 		// loop on time
+			cl_event complete = nullptr;
 		for(int i(1); i < _K; i++)
 		{
 			printf("k %d\n",i);
-			cl_event complete;
 			if (i % 2 == 0) // even
 			{
 				clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&matrix_present_mem_obj);
@@ -197,8 +201,8 @@ namespace log645
 			
 			status = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,&global_item_size, &local_item_size, 0, NULL, &complete);
 			clWaitForEvents(1, &complete);
-			clReleaseEvent(complete);
 		}
+			clReleaseEvent(complete);
 
 		// Read the memory buffer matrix on the device to the local variable matrix
 		status = clEnqueueReadBuffer(command_queue, matrix_present_mem_obj, CL_TRUE, 0, _matrixBufferSize, _matrix, 0, NULL, NULL);
@@ -223,6 +227,7 @@ namespace log645
 		status = clReleaseContext(context);
 		free(_matrix);
 		free(_matrixPrevious);
+		*/
 
 	}
 
